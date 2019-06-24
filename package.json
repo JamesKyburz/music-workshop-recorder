@@ -1,0 +1,26 @@
+{
+  "name": "lmr",
+  "version": "0.0.0",
+  "description": "Live record music",
+  "keywords": [
+    "record",
+    "music",
+    "offline"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/jameskyburz/lmr.git"
+  },
+  "author": {
+    "name": "James Kyburz",
+    "email": "james.kyburz@gmail.com"
+  },
+  "scripts": {
+    "start": "npx serve ./src -o"
+  },
+  "files": [
+    "src"
+  ],
+  "private": true,
+  "license": "Apache-2.0"
+}

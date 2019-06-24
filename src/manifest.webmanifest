@@ -1,0 +1,10 @@
+{
+  "name": "Live music recorder",
+  "short_name": "LMR",
+  "scope": "/",
+  "display": "fullscreen",
+  "start_url": "/",
+  "screenshots": [],
+  "background_color": "#191414",
+  "theme_color": "#191414"
+}
