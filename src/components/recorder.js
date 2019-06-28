@@ -1,13 +1,18 @@
 import { button, div } from '../dom.js'
 
-export default opt => {
-  return div({
+export default opt =>
+  div({
     className: 'row recorder',
     children: [
       button({
         className: 'col record',
-        textContent: '●',
-        onclick: opt.onRecord
+        textContent: '● (audio)',
+        onclick: e => opt.onRecord('audio', e)
+      }),
+      button({
+        className: 'col record',
+        textContent: '● (video)',
+        onclick: e => opt.onRecord('video', e)
       }),
       button({
         className: 'col stop',
@@ -16,4 +21,3 @@ export default opt => {
       })
     ]
   })
-}

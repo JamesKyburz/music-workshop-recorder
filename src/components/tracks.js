@@ -8,10 +8,11 @@ export default async () => {
   const tracks = []
   for (const key of await keys(metaStore)) {
     const metadata = await get(key, metaStore)
+    const { title, duration } = metadata
     tracks.push(
       track({
-        title: metadata.title,
-        duration: metadata.duration,
+        title,
+        duration,
         ...controls.track({ key, metadata })
       })
     )

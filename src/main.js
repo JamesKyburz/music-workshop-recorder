@@ -6,7 +6,8 @@ if (!window.MediaRecorder || !window.navigator.mediaDevices) {
 } else {
   window.navigator.mediaDevices
     .getUserMedia({
-      audio: true
+      audio: true,
+      video: true
     })
     .then(app)
     .then(el => window.document.body.appendChild(el))
