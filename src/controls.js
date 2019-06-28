@@ -7,7 +7,8 @@ export default input => {
   const metaStore = new Store('meta-db')
   return {
     record: () => ({
-      async onRecord (e) {
+      async onRecord (type, e) {
+        e.target.parentNode.querySelector('.stop').textContent = `■ (${type})`
         const playing = e.target.parentNode.parentNode.querySelector('.playing')
         if (playing) {
           playing.classList.remove('playing')
@@ -15,9 +16,23 @@ export default input => {
         e.target.parentNode.classList.add('recording')
         started = Date.now()
         mic = new window.MediaRecorder(input, {
-          audioBitsPerSecond: 128000
+          bitsPerSecond: 128000,
+          mimeType: `${type}/webm`
         })
-        mic.ondataavailable = ({ data }) => allChunks.push(data)
+        let recordTimer = setTimeout(
+          () =>
+            window.alert(
+              `not recording, check your microphone isn't in use by another page`
+            ),
+          1500
+        )
+        mic.ondataavailable = ({ data }) => {
+          allChunks.push(data)
+          if (recordTimer) {
+            clearTimeout(recordTimer)
+            recordTimer = null
+          }
+        }
         mic.start(200)
       },
       async onStop (e) {
@@ -36,7 +51,8 @@ export default input => {
             key,
             {
               duration: msToTime(Date.now() - started),
-              title: displayDate(Date.now())
+              title: displayDate(Date.now()),
+              mimeType: allChunks[0].type
             },
             metaStore
           )
@@ -49,31 +65,39 @@ export default input => {
       }
     }),
     track ({ key, metadata }) {
-      let audio
+      let media
       const onStop = e => {
-        if (audio) {
+        if (media) {
           e.target.parentNode.classList.remove('playing')
-          window.URL.revokeObjectURL(audio.src)
-          audio.pause()
-          audio.src = ''
-          audio = null
+          window.URL.revokeObjectURL(media.src)
+          media.pause()
+          if (media.parentNode) media.parentNode.removeChild(media)
+          media.src = ''
+          media = null
         }
       }
       return {
         async onPlay (e) {
-          e.target.parentNode.classList.add('playing')
           const { data } = await get(key, blobStore)
-          audio = new window.Audio()
-          audio.src = window.URL.createObjectURL(new window.Blob(data))
-          audio.onended = () => onStop(e)
-          audio.play()
+          e.target.parentNode.classList.add('playing')
+          const blob = new window.Blob(data)
+          const isVideo = metadata.mimeType === 'video/webm'
+          media = window.document.createElement(isVideo ? 'video' : 'audio')
+          media.src = window.URL.createObjectURL(blob)
+          media.onended = () => onStop(e)
+          media.play().catch(err => window.alert(err.message))
+          if (isVideo) {
+            media.controls = true
+            window.document.body.appendChild(media)
+            media.requestFullscreen().catch(f => f)
+          }
         },
         onStop,
         async onPause (e) {
-          if (audio.paused) {
-            audio.play()
+          if (media.paused) {
+            media.play().catch(err => window.alert(err.message))
           } else {
-            audio.pause()
+            media.pause()
           }
         },
         async onDelete (e) {
