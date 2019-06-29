@@ -36,6 +36,7 @@ button:focus {
 
 .recorder button {
   color: red;
+  background: none;
 }
 
 .recorder:not(.recording) > .stop {
@@ -72,6 +73,10 @@ button:focus {
   font-size: 18px;
   font-weight: bolder;
   border: none;
+}
+
+.stop {
+  z-index: 100
 }
 
 .record:hover, .play:hover, .delete:hover, .pause:hover, .stop:hover{

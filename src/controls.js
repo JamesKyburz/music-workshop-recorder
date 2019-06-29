@@ -1,10 +1,11 @@
 import { del, set, get, Store } from 'https://unpkg.com/idb-keyval@3.2.0?module'
 export default input => {
-  let mic
+  let capture
   let allChunks = []
   let started
   const blobStore = new Store('blob-db')
   const metaStore = new Store('meta-db')
+  let recordingVideo
   return {
     record: () => ({
       async onRecord (type, e) {
@@ -15,29 +16,42 @@ export default input => {
         }
         e.target.parentNode.classList.add('recording')
         started = Date.now()
-        mic = new window.MediaRecorder(input, {
+        capture = new window.MediaRecorder(input, {
           bitsPerSecond: 128000,
           mimeType: `${type}/webm`
         })
+        if (type === 'video') {
+          recordingVideo = window.document.createElement('video')
+          recordingVideo.width = window.document.body.clientWidth
+          recordingVideo.style = 'position: fixed; top: 0; left: 0'
+          recordingVideo.muted = true
+          recordingVideo.srcObject = input
+          recordingVideo.play().catch(f => f)
+          e.target.parentNode.appendChild(recordingVideo)
+        }
         let recordTimer = setTimeout(
           () =>
             window.alert(
-              `not recording, check your microphone isn't in use by another page`
+              `not recording, check your microphone/camera isn't in use by another page`
             ),
           1500
         )
-        mic.ondataavailable = ({ data }) => {
+        capture.ondataavailable = ({ data }) => {
           allChunks.push(data)
           if (recordTimer) {
             clearTimeout(recordTimer)
             recordTimer = null
           }
         }
-        mic.start(200)
+        capture.start(200)
       },
       async onStop (e) {
         e.target.parentNode.classList.remove('recording')
-        mic.stop()
+        capture.stop()
+        if (recordingVideo) {
+          recordingVideo.parentNode.removeChild(recordingVideo)
+          recordingVideo = null
+        }
         if (allChunks.length) {
           const key = Date.now()
           await set(
@@ -57,7 +71,7 @@ export default input => {
             metaStore
           )
           allChunks.splice(0, allChunks.length)
-          mic = null
+          capture = null
         } else {
           console.log('there is no audio data to save')
         }
@@ -89,7 +103,6 @@ export default input => {
           if (isVideo) {
             media.controls = true
             window.document.body.appendChild(media)
-            media.requestFullscreen().catch(f => f)
           }
         },
         onStop,

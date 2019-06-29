@@ -7,7 +7,7 @@ if (!window.MediaRecorder || !window.navigator.mediaDevices) {
   window.navigator.mediaDevices
     .getUserMedia({
       audio: true,
-      video: true
+      video: { facingMode: 'environment' }
     })
     .then(app)
     .then(el => window.document.body.appendChild(el))

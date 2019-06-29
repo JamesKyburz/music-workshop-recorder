@@ -1,5 +1,5 @@
 /* eslint-env serviceworker */
-const cacheKey = '2'
+const cacheKey = '3'
 
 const deleteOldCaches = newCacheKey => {
   return self.caches
