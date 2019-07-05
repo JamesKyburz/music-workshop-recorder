@@ -17,7 +17,6 @@ export default input => {
         e.target.parentNode.classList.add('recording')
         started = Date.now()
         capture = new window.MediaRecorder(input, {
-          bitsPerSecond: 128000,
           mimeType: `${type}/webm`
         })
         if (type === 'video') {
