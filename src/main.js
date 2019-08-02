@@ -1,6 +1,13 @@
 import app from './components/app.js'
 import './register-sw.js'
 
+if (
+  window.location.hostname !== 'localhost' &&
+  window.location.protocol !== 'https:'
+) {
+  window.location.href = window.location.href.replace(/http:/, 'https:')
+}
+
 if (!window.MediaRecorder || !window.navigator.mediaDevices) {
   window.document.body.innerHTML = `<h1>Sorry your browser isn't supported</h1>`
 } else {
