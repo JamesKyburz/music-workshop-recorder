@@ -6,7 +6,14 @@ if (!window.MediaRecorder || !window.navigator.mediaDevices) {
 } else {
   window.navigator.mediaDevices
     .getUserMedia({
-      audio: true,
+      audio: {
+        sampleRate: 48000,
+        channelCount: 2,
+        volume: 1.0,
+        echoCancellation: false,
+        noiseSuppression: false,
+        audioGainControl: false
+      },
       video: { facingMode: 'environment' }
     })
     .then(app)
