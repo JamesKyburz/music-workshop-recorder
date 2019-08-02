@@ -2,7 +2,7 @@
   "name": "Live music recorder",
   "short_name": "LMR",
   "scope": "/",
-  "display": "fullscreen",
+  "display": "standalone",
   "start_url": "/",
   "screenshots": [],
   "background_color": "#191414",
