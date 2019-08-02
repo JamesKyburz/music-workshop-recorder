@@ -97,6 +97,7 @@ export default input => {
           const isVideo = metadata.mimeType === 'video/webm'
           media = window.document.createElement(isVideo ? 'video' : 'audio')
           media.src = window.URL.createObjectURL(blob)
+          media.style.maxWidth = '100vw'
           media.onended = () => onStop(e)
           media.play().catch(err => window.alert(err.message))
           if (isVideo) {
