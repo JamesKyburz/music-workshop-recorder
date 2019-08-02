@@ -16,7 +16,7 @@
     "email": "james.kyburz@gmail.com"
   },
   "scripts": {
-    "start": "npx serve ./src -o"
+    "start": "npx serve $([[ -z $DYNO ]] && echo '-o') ./src"
   },
   "files": [
     "src"
