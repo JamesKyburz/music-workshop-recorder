@@ -5,10 +5,4 @@ import tracks from './tracks.js'
 import { div } from '../dom.js'
 
 export default async input =>
-  div({
-    children: [
-      header(),
-      recorder(Controls(input).record()),
-      ...(await tracks())
-    ]
-  })
+  div([header(), recorder(Controls(input).record()), ...(await tracks())])

@@ -1,6 +1,10 @@
-const createElement = (name, opt) => {
+const createElement = name => (opt, children) => {
+  if (Array.isArray(opt)) {
+    children = opt
+    opt = {}
+  }
   const el = window.document.createElement(name)
-  for (const child of opt.children || []) {
+  for (const child of children || []) {
     el.appendChild(child)
   }
   for (const [key, value] of Object.entries(opt)) {
@@ -9,6 +13,6 @@ const createElement = (name, opt) => {
   }
   return el
 }
-export const div = createElement.bind(null, 'div')
-export const button = createElement.bind(null, 'button')
-export const h1 = createElement.bind(null, 'h1')
+export const div = createElement('div')
+export const button = createElement('button')
+export const h1 = createElement('h1')

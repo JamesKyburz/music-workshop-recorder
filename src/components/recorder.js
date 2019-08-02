@@ -1,9 +1,11 @@
 import { button, div } from '../dom.js'
 
 export default opt =>
-  div({
-    className: 'row recorder',
-    children: [
+  div(
+    {
+      className: 'row recorder'
+    },
+    [
       button({
         className: 'col record',
         textContent: '● (audio)',
@@ -20,4 +22,4 @@ export default opt =>
         onclick: opt.onStop
       })
     ]
-  })
+  )

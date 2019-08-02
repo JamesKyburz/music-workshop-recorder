@@ -1,9 +1,11 @@
 import { div, button } from '../dom.js'
 
 export default opt =>
-  div({
-    className: 'row track',
-    children: [
+  div(
+    {
+      className: 'row track'
+    },
+    [
       div({
         className: 'col title',
         textContent: opt.title
@@ -33,4 +35,4 @@ export default opt =>
         onclick: opt.onStop
       })
     ]
-  })
+  )
