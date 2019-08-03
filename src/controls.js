@@ -103,6 +103,7 @@ export default input => {
           if (isVideo) {
             media.controls = true
             window.document.body.appendChild(media)
+            media.scrollIntoView()
           }
         },
         onStop,
