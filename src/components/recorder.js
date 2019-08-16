@@ -1,25 +1,31 @@
-import { button, div } from '../dom.js'
+import { img, div } from '../dom.js'
+import recordAudio from '../img/record-audio.svg'
+import recordVideo from '../img/record-video.svg'
+import stopRecording from '../img/stop-recording.svg'
 
 export default opt =>
   div(
     {
-      className: 'row recorder'
+      className: 'recorder'
     },
     [
-      button({
-        className: 'col record',
-        textContent: '● (audio)',
-        onclick: e => opt.onRecord('audio', e)
-      }),
-      button({
-        className: 'col record',
-        textContent: '● (video)',
-        onclick: e => opt.onRecord('video', e)
-      }),
-      button({
-        className: 'col stop',
-        textContent: '■',
-        onclick: opt.onStop
-      })
+      div(
+        {
+          className: 'controls'
+        },
+        [
+          img({
+            className: 'audio',
+            src: recordAudio,
+            onclick: opt.onRecord('audio')
+          }),
+          img({
+            className: 'video',
+            src: recordVideo,
+            onclick: opt.onRecord('video')
+          }),
+          img({ className: 'stop', src: stopRecording, onclick: opt.onStop })
+        ]
+      )
     ]
   )

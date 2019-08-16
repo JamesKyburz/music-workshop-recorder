@@ -1,0 +1,5 @@
+<svg height="48" width="48" version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+  <path d="M 24.24,6.66 L 24.24,36.9 M 24.24,6.66 C 28.94 12.96,30.54 14.40 38.94 14.40" style="fill:rgba(255, 255, 255, 1);stroke:rgba(255, 255, 255, 1);stroke-linecap:round;stroke-width:2;"></path>
+  <ellipse cx="19.41" cy="37.03" rx="4.83" ry="3.02" style="fill:rgba(255, 255, 255, 1);stroke:rgba(255, 255, 255, 1);stroke-linecap:round;stroke-width:2;"></ellipse>
+  <ellipse cx="24" cy="24" rx="22" ry="22" style="fill:rgba(0, 0, 0, 0);stroke:rgba(235, 0, 0, 1);stroke-linecap:round;stroke-width:4;"></ellipse>
+</svg>
