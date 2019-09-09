@@ -1,5 +1,6 @@
 import app from './components/app.js'
 import './register-sw.js'
+import getInput from './get-input.js'
 
 if (
   window.location.hostname !== 'localhost' &&
@@ -11,19 +12,8 @@ if (
 if (!window.MediaRecorder || !window.navigator.mediaDevices) {
   window.document.body.innerHTML = `<h1>Sorry your browser isn't supported</h1>`
 } else {
-  window.navigator.mediaDevices
-    .getUserMedia({
-      audio: {
-        sampleRate: 48000,
-        channelCount: 2,
-        volume: 1.0,
-        echoCancellation: false,
-        noiseSuppression: false,
-        audioGainControl: false
-      },
-      video: { facingMode: 'environment' }
-    })
+  getInput()
     .then(app)
-    .then(el => window.document.body.appendChild(el))
-    .catch(console.error)
+    .then(el => el && window.document.body.appendChild(el))
+    .catch(err => console.error(err))
 }

@@ -1,7 +1,16 @@
 {
   "name": "Music workshop recorder",
-  "short_name": "LMR",
+  "short_name": "Music recorder",
   "scope": "/",
+  "icons": [{
+    "src": "/img/favicon-144.png",
+    "sizes": "144x144",
+    "type": "image/png"
+  },{
+    "src": "/img/favicon-512.png",
+    "sizes": "512x512",
+    "type": "image/png"
+  }],
   "display": "standalone",
   "start_url": "/",
   "screenshots": [],

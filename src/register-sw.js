@@ -1,18 +1,10 @@
-const swUrl = '/sw.js'
-
 if (navigator.serviceWorker) {
   navigator.serviceWorker
-    .register(swUrl)
+    .register('/sw.js')
     .then(registration => {
       if (window.navigator.serviceWorker.controller) {
-        registration.update()
+        if (registration.update) registration.update()
       }
-      window.navigator.serviceWorker.addEventListener('message', ({ data }) => {
-        if (data.action === 'refresh') {
-          console.log('onmessage refresh')
-          window.location.reload()
-        }
-      })
       registration.onupdatefound = () => {
         const installingWorker = registration.installing
         if (!installingWorker) return

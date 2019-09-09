@@ -1,0 +1,7 @@
+<svg height="48" width="48" version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+  <rect x="11.16" y="17.70" height="16.67" width="19.24" rx="3.84" ry="3.84" style="fill:rgba(255, 255, 255, 1);stroke:rgba(255, 255, 255, 1);stroke-linecap:round;stroke-width:2;"></rect>
+  <ellipse cx="16.94" cy="13.21" rx="3.20" ry="3.30" style="fill:rgba(255, 255, 255, 1);stroke:rgba(255, 255, 255, 1);stroke-linecap:round;stroke-width:2;"></ellipse>
+  <ellipse cx="24.63" cy="13.21" rx="3.20" ry="3.20" style="fill:rgba(255, 255, 255, 1);stroke:rgba(255, 255, 255, 1);stroke-linecap:round;stroke-width:2;"></ellipse>
+  <path d="M 31.69,24.76 L 37.46,20.9144 L 37.46,28.61 L 31.69,24.76Z" style="fill:rgba(255, 255, 255, 1);stroke:rgba(255, 255, 255, 1);stroke-linecap:round;stroke-width:2;"></path>
+  <ellipse cx="24" cy="24" rx="22" ry="22" style="fill:rgba(0, 0, 0, 0);stroke:rgba(235, 0, 0, 1);stroke-linecap:round;stroke-width:4;"></ellipse>
+</svg>

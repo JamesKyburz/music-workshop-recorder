@@ -1,38 +1,26 @@
-import { div, button } from '../dom.js'
+import { div, img, span } from '../dom.js'
+import audio from '../img/audio.svg'
+import video from '../img/video.svg'
+import player from './player'
 
 export default opt =>
   div(
     {
-      className: 'row track'
+      className: `track key-${opt.key}`,
+      onclick: e => window.document.body.appendChild(player(opt))
     },
     [
-      div({
-        className: 'col title',
-        textContent: opt.title
+      span({
+        className: 'title',
+        textContent: opt.title || 'untitled'
       }),
-      div({
-        className: 'col duration',
+      img({
+        className: 'type',
+        src: opt.type === 'audio' ? audio : video
+      }),
+      span({
+        className: 'duration',
         textContent: opt.duration
-      }),
-      button({
-        className: 'col play',
-        textContent: '▶',
-        onclick: opt.onPlay
-      }),
-      button({
-        className: 'col delete',
-        textContent: '✖',
-        onclick: opt.onDelete
-      }),
-      button({
-        className: 'col pause',
-        textContent: '॥',
-        onclick: opt.onPause
-      }),
-      button({
-        className: 'col stop',
-        textContent: '■',
-        onclick: opt.onStop
       })
     ]
   )
