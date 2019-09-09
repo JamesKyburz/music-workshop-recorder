@@ -7,8 +7,6 @@ const createElement = name => (opt, children) => {
   return el
 }
 export const div = createElement('div')
-export const button = createElement('button')
-export const h1 = createElement('h1')
 export const img = createElement('img')
 export const input = createElement('input')
 export const h4 = createElement('h4')
