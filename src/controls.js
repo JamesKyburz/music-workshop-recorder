@@ -75,11 +75,11 @@ export default input => {
               clearTimeout(recordTimer)
               recordTimer = null
             }
-            const { type } = data
+            const mimeType = `${type}/webm`
             const capture = new window.Blob(
               [previousCapture, data].filter(Boolean),
               {
-                type
+                mimeType
               }
             )
             if (capture.size < fixedSize && recording) {
@@ -87,7 +87,7 @@ export default input => {
             } else {
               let start = 0
               while (start < capture.size) {
-                const frame = capture.slice(start, start + fixedSize, type)
+                const frame = capture.slice(start, start + fixedSize, mimeType)
                 if (frame.size) {
                   if (frame.size === fixedSize || !recording) {
                     const key = prefix + part
@@ -107,7 +107,7 @@ export default input => {
                 {
                   duration: msToTime(Date.now() - started),
                   title: '',
-                  mimeType: type,
+                  mimeType,
                   totalSize,
                   fixedSize
                 },
