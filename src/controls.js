@@ -1,4 +1,5 @@
 import { del, set, get, Store } from 'idb-keyval'
+import { audio, video } from './dom.js'
 
 export default input => {
   let capture
@@ -51,12 +52,12 @@ export default input => {
             mimeType: `${type}/webm`
           })
           if (type === 'video') {
-            recordingVideo = window.document.createElement('video')
-            recordingVideo.className = 'recording'
-            recordingVideo.width = window.document.body.clientWidth
-            recordingVideo.style = 'position: fixed; top: 0; left: 0'
-            recordingVideo.muted = true
-            recordingVideo.srcObject = input
+            recordingVideo = video({
+              className: 'recording',
+              style: 'position: fixed; top: 0; left: 0',
+              muted: true,
+              srcObject: input
+            })
             recordingVideo.play().catch(f => f)
             window.document.body.appendChild(recordingVideo)
           }
@@ -133,10 +134,8 @@ export default input => {
           timeline.style.width = 0
           const currentTime = player.querySelector('.current-time')
           currentTime.textContent = metadata.duration
-          if (media.parentNode) {
-            media.parentNode.removeChild(media)
-            media = null
-          }
+          if (media && media.parentNode) media.parentNode.removeChild(media)
+          media = null
         }
       }
       const onPlay = async (e, opt = {}) => {
@@ -162,37 +161,29 @@ export default input => {
         }
         timeline.style.width = 0
         const isVideo = metadata.mimeType === 'video/webm'
-        media = window.document.createElement(isVideo ? 'video' : 'audio')
-        media.ontimeupdate = () => {
-          if (media) {
-            currentTime.textContent = msToTime(
-              Math.max(0, duration - media.currentTime * 1000)
-            )
-            timeline.style.width = `${Math.ceil(
-              ((media.currentTime * 1000) / duration) * 100
-            )}%`
+        media = (isVideo ? video : audio)({
+          className: 'playing',
+          src: await getMediaSource(key, metadata),
+          style: 'maxWidth = 100vw',
+          onended () {
+            onStop(e)
+          },
+          ontimeupdate () {
+            if (media) {
+              currentTime.textContent = msToTime(
+                Math.max(0, duration - media.currentTime * 1000)
+              )
+              timeline.style.width = `${Math.ceil(
+                ((media.currentTime * 1000) / duration) * 100
+              )}%`
+            }
           }
-        }
-        if (metadata.totalSize) {
-          media.src = `/stream/${encodeURIComponent(
-            metadata.title || 'name'
-          )}.webm?totalSize=${metadata.totalSize}&fixedSize=${
-            metadata.fixedSize
-          }&prefix=${key + '-'}`
-        } else {
-          const singleBlob = await get(key, blobStore)
-          const blob = new window.Blob(singleBlob.data)
-          media.src = window.URL.createObjectURL(blob)
-        }
-        media.style.maxWidth = '100vw'
-        media.onended = () => onStop(e)
+        })
         if (!opt.pause) {
           media.play().catch(err => window.alert(err.message))
         }
         if (isVideo) {
-          media.className = 'playing'
           window.document.body.appendChild(media)
-          media.scrollIntoView()
         }
       }
       let inputTimer
@@ -217,7 +208,7 @@ export default input => {
           if (media) {
             media.pause()
             window.URL.revokeObjectURL(media.src)
-            if (media.parentNode) media.parentNode.removeChild(media)
+            if (media && media.parentNode) media.parentNode.removeChild(media)
             media = null
           }
           const player = e.target.closest('.player')
@@ -248,6 +239,19 @@ export default input => {
           }
         }
       }
+    }
+  }
+  async function getMediaSource (key, metadata) {
+    if (metadata.totalSize) {
+      return `/stream/${encodeURIComponent(
+        metadata.title || 'name'
+      )}.webm?totalSize=${metadata.totalSize}&fixedSize=${
+        metadata.fixedSize
+      }&prefix=${key + '-'}`
+    } else {
+      const singleBlob = await get(key, blobStore)
+      const blob = new window.Blob(singleBlob.data)
+      return window.URL.createObjectURL(blob)
     }
   }
 }
