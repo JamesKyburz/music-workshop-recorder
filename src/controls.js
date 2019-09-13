@@ -259,9 +259,9 @@ export default input => {
 function durationToMs (duration) {
   const parts = duration.split(':')
   return (
-    (parts.slice(-3)[0] || 0) * 3600000 +
-    (parts.slice(-2)[0] || 0) * 60000 +
-    parts.slice(-1)[0] * 1000
+    (parts.pop() || 0) * 1000 +
+    (parts.pop() || 0) * 60000 +
+    (parts.pop() || 0) * 3600000
   )
 }
 
