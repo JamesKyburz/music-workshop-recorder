@@ -100,7 +100,7 @@ video.recording {
   left: 0;
   position: fixed;
 }
-.player.playing .pause, .player.playing .stop, {
+.player.playing .pause, .player.playing .stop, .player.playing .increase, .player.playing .decrease {
   display: inline-block;
   position: fixed;
   cursor: pointer;
@@ -108,7 +108,7 @@ video.recording {
 .player.playing .play, .player.playing .delete {
   display: none;
 }
-.player.stopped .pause, .player.stopped .stop {
+.player.stopped .pause, .player.stopped .stop, .player.stopped .increase, .player.stopped .decrease {
   display: none;
 }
 video.playing {

@@ -216,6 +216,12 @@ export default input => {
         },
         onPlay,
         onStop,
+        onIncrease () {
+          if (media) media.playbackRate = Math.min(media.playbackRate + 0.25, 4)
+        },
+        onDecrease () {
+          if (media) media.playbackRate = Math.min(media.playbackRate - 0.25, 0.25)
+        },
         async onPause (e) {
           if (media) {
             if (media.paused) {

@@ -6,6 +6,8 @@ import stop from '../img/stop-playing.svg'
 import audio from '../img/audio.svg'
 import video from '../img/video.svg'
 import deleteTrack from '../img/delete.svg'
+import increase from '../img/increase.svg'
+import decrease from '../img/decrease.svg'
 
 export default opt =>
   div(
@@ -41,6 +43,11 @@ export default opt =>
             onclick: opt.onPlay
           }),
           img({
+            className: 'decrease',
+            src: decrease,
+            onclick: opt.onDecrease
+          }),
+          img({
             className: 'pause',
             src: pause,
             onclick: opt.onPause
@@ -49,6 +56,11 @@ export default opt =>
             className: 'stop',
             src: stop,
             onclick: opt.onStop
+          }),
+          img({
+            className: 'increase',
+            src: increase,
+            onclick: opt.onIncrease
           }),
           img({
             className: 'delete',
