@@ -99,7 +99,7 @@ async function dump () {
         }
       }).catch(console.error)
       // eslint-disable-next-line
-      while (more) {
+      while (more || pending.length) {
         while (true) {
           const cursor = pending.pop()
           if (!cursor) break
@@ -108,7 +108,7 @@ async function dump () {
             JSON.stringify({
               next: {
                 size: value.byteLength.toString(32).padStart(5, '0'),
-                key: cursor.key.padStart(15, '0'),
+                key: cursor.key.toString().padStart(15, '0'),
                 type: 'B'
               }
             })
