@@ -98,7 +98,9 @@ async function dump () {
       }).catch(console.error)
       // eslint-disable-next-line
       while (more) {
-        for (const cursor of pending) {
+        while (true) {
+          const cursor = pending.pop()
+          if (!cursor) break
           const value = new Uint8Array(await cursor.value.arrayBuffer())
           const header = new self.TextEncoder().encode(
             JSON.stringify({

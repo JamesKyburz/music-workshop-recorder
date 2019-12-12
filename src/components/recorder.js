@@ -1,4 +1,4 @@
-import { img, div } from '../dom.js'
+import { img, div, a } from '../dom.js'
 import recordAudio from '../img/record-audio.svg'
 import recordVideo from '../img/record-video.svg'
 import stopRecording from '../img/stop-recording.svg'
@@ -31,11 +31,18 @@ export default opt =>
             src: recordVideo,
             onclick: opt.onRecord('video')
           }),
-          img({
-            className: 'download',
-            src: download,
-            onclick: opt.onDownload()
-          }),
+          a(
+            {
+              className: 'download',
+              href: '/dump'
+            },
+            [
+              img({
+                className: 'download',
+                src: download
+              })
+            ]
+          ),
           img({ className: 'stop', src: stopRecording, onclick: opt.onStop })
         ]
       )

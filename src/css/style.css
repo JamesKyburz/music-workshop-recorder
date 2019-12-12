@@ -21,6 +21,9 @@ input {
   z-index: 3;
   text-align: center;
 }
+a.download {
+  text-decoration: none;
+}
 video.recording {
   z-index: 5;
   top: 0;

@@ -1,8 +1,6 @@
 import { del, set, get, Store } from 'idb-keyval'
 import { audio, video } from './dom.js'
 
-let currentTrack
-
 export default input => {
   let capture
   let totalSize = 0
@@ -30,17 +28,6 @@ export default input => {
   }
   return {
     record: () => ({
-      onDownload () {
-        return async () => {
-          const a = window.document.body.appendChild(
-            window.document.createElement('a')
-          )
-          a.style.display = 'none'
-          a.href = currentTrack ? `/download/${currentTrack}-` : '/dump'
-          a.click()
-          setTimeout(() => a.parentNode.removeChild(a), 300)
-        }
-      },
       onUpload () {
         return async () => {
           const input = window.document.body.appendChild(
@@ -251,7 +238,7 @@ export default input => {
       let inputTimer
       return {
         onShow () {
-          currentTrack = key
+          window.document.querySelector('a.download').href = `/download/${key}-`
         },
         onInput (e) {
           const inputValue = e.target.value
@@ -272,7 +259,7 @@ export default input => {
           }, 250)
         },
         onBack (e) {
-          currentTrack = null
+          window.document.querySelector('a.download').href = `/dump`
           if (media) {
             media.pause()
             window.URL.revokeObjectURL(media.src)
