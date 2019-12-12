@@ -90,7 +90,9 @@ async function dump () {
       cursor(stores.blob, event => {
         const cursor = event.target.result
         if (cursor) {
-          pending.push({ key: cursor.key, value: cursor.value.slice() })
+          const { key, value } = cursor
+          const copy = value.slice ? value.slice() : new self.Blob(value.data)
+          pending.push({ key, value: copy })
           cursor.continue()
         } else {
           more = false
@@ -243,7 +245,7 @@ async function stream (request) {
         status: 404
       })
     }
-    return new self.Response(all, {
+    return new self.Response(new self.Blob(all.data), {
       headers: [['Content-Length', all.size], ['Content-Type', mimeType]]
     })
   }
