@@ -1,6 +1,8 @@
 import { del, set, get, Store } from 'idb-keyval'
 import { audio, video } from './dom.js'
 
+let currentTrack
+
 export default input => {
   let capture
   let totalSize = 0
@@ -28,6 +30,49 @@ export default input => {
   }
   return {
     record: () => ({
+      onDownload () {
+        return async () => {
+          const a = window.document.body.appendChild(
+            window.document.createElement('a')
+          )
+          a.style.display = 'none'
+          a.href = currentTrack ? `/download/${currentTrack}-` : '/dump'
+          a.click()
+          setTimeout(() => a.parentNode.removeChild(a), 300)
+        }
+      },
+      onUpload () {
+        return async () => {
+          const input = window.document.body.appendChild(
+            window.document.createElement('input')
+          )
+          input.style.display = 'none'
+          input.type = 'file'
+          input.multiple = true
+          input.accept = '.mwr,audio/*,video/*'
+          input.onchange = async () => {
+            const formData = new window.FormData()
+            for (const file of input.files) {
+              formData.append(
+                'file',
+                file.slice(),
+                file.name.replace(/[^\w_ .]/g, '')
+              )
+            }
+            const res = await window.fetch('/upload', {
+              method: 'PUT',
+              body: formData
+            })
+            if (res.status === 200) {
+              window.location.reload()
+            } else {
+              window.alert('sorry failed to upload')
+            }
+            input.parentNode.removeChild(input)
+          }
+          input.click()
+        }
+      },
       onStop,
       onRecord (type) {
         return async e => {
@@ -145,7 +190,7 @@ export default input => {
         const currentTime = player.querySelector('.current-time')
         const timeline = player.querySelector('.timeline')
         const progress = player.querySelector('.progress')
-        const duration = durationToMs(metadata.duration)
+        let duration = durationToMs(metadata.duration)
         progress.onclick = e => {
           const update = () => {
             if (media) {
@@ -160,7 +205,7 @@ export default input => {
           }
         }
         timeline.style.width = 0
-        const isVideo = metadata.mimeType === 'video/webm'
+        const isVideo = metadata.mimeType.startsWith('video')
         media = (isVideo ? video : audio)({
           className: 'playing',
           src: await getMediaSource(key, metadata),
@@ -170,6 +215,23 @@ export default input => {
           },
           ontimeupdate () {
             if (media) {
+              if (duration === 0 && media.duration !== Infinity) {
+                duration = media.duration * 1000
+                get(key, metaStore)
+                  .then(meta => {
+                    if (meta) {
+                      return set(
+                        key,
+                        {
+                          ...meta,
+                          duration: msToTime(duration)
+                        },
+                        metaStore
+                      )
+                    }
+                  })
+                  .catch(_ => null)
+              }
               currentTime.textContent = msToTime(
                 Math.max(0, duration - media.currentTime * 1000)
               )
@@ -188,6 +250,9 @@ export default input => {
       }
       let inputTimer
       return {
+        onShow () {
+          currentTrack = key
+        },
         onInput (e) {
           const inputValue = e.target.value
           if (inputTimer) {
@@ -197,14 +262,17 @@ export default input => {
           inputTimer = setTimeout(() => {
             get(key, metaStore).then(value => {
               value.title = inputValue
-              window.document.body.querySelector(
-                `.track.key-${key} .title`
-              ).textContent = inputValue
               set(key, value, metaStore).catch(f => f)
+              try {
+                window.document.body.querySelector(
+                  `.track.key-${key} .title`
+                ).textContent = inputValue
+              } catch (_) {}
             })
           }, 250)
         },
         onBack (e) {
+          currentTrack = null
           if (media) {
             media.pause()
             window.URL.revokeObjectURL(media.src)
@@ -220,7 +288,9 @@ export default input => {
           if (media) media.playbackRate = Math.min(media.playbackRate + 0.25, 4)
         },
         onDecrease () {
-          if (media) media.playbackRate = Math.max(media.playbackRate - 0.25, 0.25)
+          if (media) {
+            media.playbackRate = Math.max(media.playbackRate - 0.25, 0.25)
+          }
         },
         async onPause (e) {
           if (media) {
@@ -247,18 +317,8 @@ export default input => {
       }
     }
   }
-  async function getMediaSource (key, metadata) {
-    if (metadata.totalSize) {
-      return `/stream/${encodeURIComponent(
-        metadata.title || 'name'
-      )}.webm?totalSize=${metadata.totalSize}&fixedSize=${
-        metadata.fixedSize
-      }&prefix=${key + '-'}`
-    } else {
-      const singleBlob = await get(key, blobStore)
-      const blob = new window.Blob(singleBlob.data)
-      return window.URL.createObjectURL(blob)
-    }
+  async function getMediaSource (key) {
+    return `/stream/${key}-`
   }
 }
 
