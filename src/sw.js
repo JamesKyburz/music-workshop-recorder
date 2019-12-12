@@ -245,8 +245,9 @@ async function stream (request) {
         status: 404
       })
     }
-    return new self.Response(new self.Blob(all.data), {
-      headers: [['Content-Length', all.size], ['Content-Type', mimeType]]
+    const allData = new self.Blob(all.data)
+    return new self.Response(allData, {
+      headers: [['Content-Length', allData.size], ['Content-Type', mimeType]]
     })
   }
 }
