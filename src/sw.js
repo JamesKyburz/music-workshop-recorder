@@ -75,7 +75,7 @@ async function dump () {
             JSON.stringify({
               next: {
                 size: value.byteLength.toString(32).padStart(5, '0'),
-                key: cursor.key.padStart(15, '0'),
+                key: cursor.key.toString().padStart(15, '0'),
                 type: 'M'
               }
             })
