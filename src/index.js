@@ -10,7 +10,7 @@ if (
 }
 
 if (!window.MediaRecorder || !window.navigator.mediaDevices) {
-  window.document.body.innerHTML = `<h1>Sorry your browser isn't supported</h1>`
+  window.document.body.innerHTML = "<h1>Sorry your browser isn't supported</h1>"
 } else {
   getInput()
     .then(app)

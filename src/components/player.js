@@ -9,8 +9,9 @@ import deleteTrack from '../img/delete.svg'
 import increase from '../img/increase.svg'
 import decrease from '../img/decrease.svg'
 
-export default opt =>
-  div(
+export default opt => {
+  opt.onShow()
+  return div(
     {
       className: 'player stopped'
     },
@@ -75,3 +76,4 @@ export default opt =>
       )
     ]
   )
+}
