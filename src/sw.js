@@ -204,7 +204,7 @@ async function download (request) {
       ['Content-Type', mimeType],
       [
         'Content-Disposition',
-        `attachment; filename=${prefix.slice(0, -1)}_${durationToMs(
+        `attachment; filename=${dateKey(prefix.slice(0, -1))}_${durationToMs(
           duration
         )}_${title.replace(/_/, '')}_${mimeType.replace('/', ' ')}.${fileType(
           mimeType
@@ -287,7 +287,7 @@ async function upload (request) {
     const formData = await request.formData()
     for (const file of formData.values()) {
       const { name, size } = file
-      if (/.mwr$/i.test(name)) {
+      if (/\.mwr/i.test(name)) {
         await uploadFromDbFile(file)
         continue
       }
@@ -297,7 +297,7 @@ async function upload (request) {
       const mimeType = type.replace(/ /, '/') || file.type
       const duration = ms ? msToTime(ms) : '\xa0'
       const fixedSize = 100000
-      const key = name.includes('_') ? prefix : Date.now().toString(32)
+      const key = name.includes('_') ? dateKey(prefix) : Date.now().toString(32)
       await set(stores.meta, key, {
         duration,
         fixedSize,
@@ -341,9 +341,19 @@ async function uploadFromDbFile (file) {
     offset += trackSize
     await set(
       type === 'M' ? stores.meta : stores.blob,
-      key.replace(/^0+/, ''),
+      dateKey(key),
       trackValue
     )
+  }
+}
+
+function dateKey (key) {
+  if (+key === +new Date(+key)) {
+    return parseInt(key, 10).toString(32)
+  } else if (parseInt(key, 32) === +new Date(parseInt(key, 32))) {
+    return key.toString().replace(/^0+/, '')
+  } else {
+    return key
   }
 }
 
