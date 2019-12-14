@@ -7,6 +7,9 @@ export default input => {
   let started
   let recording
   let part
+  let uploadDownloadProgress
+  let uploadDownloadProgressTimeline
+
   const key = Date.now().toString(32)
   const blobStore = new Store('blob-db')
   const metaStore = new Store('meta-db')
@@ -26,8 +29,33 @@ export default input => {
     setTimeout(() => window.location.reload(), 1000)
     capture = null
   }
+  const uploadDownloadDom = () => {
+    if (!uploadDownloadProgress) {
+      uploadDownloadProgress = window.document.querySelector(
+        '.recorder .progress'
+      )
+      if (uploadDownloadProgress) {
+        uploadDownloadProgressTimeline = uploadDownloadProgress.querySelector(
+          '.timeline'
+        )
+      }
+    }
+  }
   return {
     record: () => ({
+      async onDownload () {
+        const progress = new window.EventSource('/progress')
+        progress.onmessage = ({ data }) => {
+          uploadDownloadDom()
+          const percent = +data
+          if (!isNaN(percent) && percent !== 100) {
+            uploadDownloadProgressTimeline.style.width = `${percent}%`
+            uploadDownloadProgress.style.display = 'block'
+          } else {
+            uploadDownloadProgress.style.display = 'none'
+          }
+        }
+      },
       onUpload () {
         return async () => {
           const input = window.document.body.appendChild(
@@ -56,6 +84,18 @@ export default input => {
               window.alert('sorry failed to upload')
             }
             input.parentNode.removeChild(input)
+          }
+          const progress = new window.EventSource('/progress')
+          progress.onmessage = ({ data }) => {
+            uploadDownloadDom()
+            const percent = +data
+            console.log('got upload progress', data)
+            if (!isNaN(percent) && percent !== 100) {
+              uploadDownloadProgressTimeline.style.width = `${percent}%`
+              uploadDownloadProgress.style.display = 'block'
+            } else {
+              uploadDownloadProgress.style.display = 'none'
+            }
           }
           input.click()
         }

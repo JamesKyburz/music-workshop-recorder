@@ -1,6 +1,8 @@
 /* eslint-env serviceworker */
 const { CACHE_KEY } = process.env
 
+let progressController
+
 const createStore = dbName => {
   const storeName = 'keyval'
   const openDB = new Promise((resolve, reject) => {
@@ -53,82 +55,103 @@ async function cursor (store, next) {
 }
 
 async function dump () {
-  const stream = new self.ReadableStream({
-    async start (controller) {
-      const headerSize = new self.TextEncoder().encode(
-        JSON.stringify({
-          next: {
-            size: '0'.padStart(5, '0'),
-            key: '0'.padStart(15, '0'),
-            type: 'X'
+  try {
+    reportProgress(0)
+
+    const stream = new self.ReadableStream({
+      async start (controller) {
+        const headerSize = new self.TextEncoder().encode(
+          JSON.stringify({
+            next: {
+              size: '0'.padStart(5, '0'),
+              key: '0'.padStart(15, '0'),
+              type: 'X'
+            }
+          }).length.toString(32)
+        )
+        controller.enqueue(headerSize)
+        let trackTotal = 0
+        await cursor(stores.meta, event => {
+          const cursor = event.target.result
+          if (cursor) {
+            const value = new self.TextEncoder().encode(
+              JSON.stringify(cursor.value)
+            )
+            const header = new self.TextEncoder().encode(
+              JSON.stringify({
+                next: {
+                  size: value.byteLength.toString(32).padStart(5, '0'),
+                  key: cursor.key.toString().padStart(15, '0'),
+                  type: 'M'
+                }
+              })
+            )
+            controller.enqueue(header)
+            controller.enqueue(value)
+            trackTotal++
+            cursor.continue()
           }
-        }).length.toString(32)
-      )
-      controller.enqueue(headerSize)
-      await cursor(stores.meta, event => {
-        const cursor = event.target.result
-        if (cursor) {
-          const value = new self.TextEncoder().encode(
-            JSON.stringify(cursor.value)
-          )
-          const header = new self.TextEncoder().encode(
-            JSON.stringify({
-              next: {
-                size: value.byteLength.toString(32).padStart(5, '0'),
-                key: cursor.key.toString().padStart(15, '0'),
-                type: 'M'
-              }
-            })
-          )
-          controller.enqueue(header)
-          controller.enqueue(value)
-          cursor.continue()
+        })
+        const pending = []
+        let more = true
+        let lastKey
+        let tracksProcessed = 0
+        cursor(stores.blob, event => {
+          const cursor = event.target.result
+          if (cursor) {
+            const { key, value } = cursor
+            const copy = value.slice ? value.slice() : new self.Blob(value.data)
+            pending.push({ key, value: copy })
+            cursor.continue()
+          } else {
+            more = false
+          }
+        }).catch(console.error)
+        // eslint-disable-next-line
+        while (more || pending.length) {
+          while (true) {
+            const cursor = pending.pop()
+            if (!cursor) break
+            const processKey = cursor.key
+              .toString()
+              .replace(/^0+/, '')
+              .split('-')[0]
+            const value = new Uint8Array(await cursor.value.arrayBuffer())
+            const header = new self.TextEncoder().encode(
+              JSON.stringify({
+                next: {
+                  size: value.byteLength.toString(32).padStart(5, '0'),
+                  key: cursor.key.toString().padStart(15, '0'),
+                  type: 'B'
+                }
+              })
+            )
+            controller.enqueue(header)
+            controller.enqueue(value)
+            if (processKey !== lastKey) {
+              tracksProcessed++
+              reportProgress((tracksProcessed / trackTotal) * 100)
+            }
+            lastKey = processKey
+          }
+          await new Promise((resolve, reject) => setTimeout(resolve, 100))
         }
-      })
-      const pending = []
-      let more = true
-      cursor(stores.blob, event => {
-        const cursor = event.target.result
-        if (cursor) {
-          const { key, value } = cursor
-          const copy = value.slice ? value.slice() : new self.Blob(value.data)
-          pending.push({ key, value: copy })
-          cursor.continue()
-        } else {
-          more = false
-        }
-      }).catch(console.error)
-      // eslint-disable-next-line
-      while (more || pending.length) {
-        while (true) {
-          const cursor = pending.pop()
-          if (!cursor) break
-          const value = new Uint8Array(await cursor.value.arrayBuffer())
-          const header = new self.TextEncoder().encode(
-            JSON.stringify({
-              next: {
-                size: value.byteLength.toString(32).padStart(5, '0'),
-                key: cursor.key.toString().padStart(15, '0'),
-                type: 'B'
-              }
-            })
-          )
-          controller.enqueue(header)
-          controller.enqueue(value)
-        }
-        await new Promise((resolve, reject) => setTimeout(resolve, 100))
+        reportProgress(100)
+        controller.close()
       }
-      controller.close()
-    }
-  })
-  return new self.Response(stream, {
-    headers: [
-      [
-        'Content-Disposition',
-        `attachment; filename=db-${new Date().toISOString().slice(0, 10)}.mwr`
+    })
+    return new self.Response(stream, {
+      headers: [
+        [
+          'Content-Disposition',
+          `attachment; filename=db-${new Date().toISOString().slice(0, 10)}.mwr`
+        ]
       ]
-    ]
-  })
+    })
+  } catch (err) {
+    reportProgress('failed')
+    return new self.Response(err.toString(), { status: 500 })
+  }
 }
 
 self.addEventListener('install', event => {
@@ -151,7 +174,7 @@ self.addEventListener('activate', event =>
 const parseRange = value =>
   Number(((value || '').match(/^bytes=(\d+)/) || [])[1]) || 0
 
-self.addEventListener('fetch', async event => {
+self.addEventListener('fetch', event => {
   const { pathname } = new self.URL(event.request.url)
   if (event.request.method === 'GET' && pathname.startsWith('/download/')) {
     return event.respondWith(download(event.request))
@@ -165,6 +188,9 @@ self.addEventListener('fetch', async event => {
   if (event.request.method === 'GET' && pathname === '/dump') {
     return event.respondWith(dump())
   }
+  if (event.request.method === 'GET' && pathname === '/progress') {
+    return event.respondWith(getProgress())
+  }
   if (self.location.hostname === 'localhost' && !process.env.CACHE_LOCAL) {
     return
   }
@@ -172,46 +198,54 @@ self.addEventListener('fetch', async event => {
 })
 
 async function download (request) {
-  const prefix = requestPrefix(request)
+  try {
+    const prefix = requestPrefix(request)
 
-  const meta = await get(stores.meta, prefix.slice(0, -1))
+    const meta = await get(stores.meta, prefix.slice(0, -1))
 
-  if (!meta) return new self.Response(null, { status: 404 })
+    if (!meta) return new self.Response(null, { status: 404 })
+    reportProgress(0)
 
-  const { duration, mimeType, totalSize, title } = meta
-  const stream = new self.ReadableStream({
-    start (controller) {
-      const next = async offset => {
-        try {
-          const chunk = await get(stores.blob, prefix + offset)
-          if (!chunk) {
+    const { duration, mimeType, totalSize, title } = meta
+    const stream = new self.ReadableStream({
+      start (controller) {
+        const next = async offset => {
+          try {
+            const chunk = await get(stores.blob, prefix + offset)
+            if (!chunk) {
+              reportProgress(100)
+              controller.close()
+            } else {
+              controller.enqueue(new Uint8Array(await chunk.arrayBuffer()))
+              next(offset + 1)
+            }
+          } catch (err) {
+            console.error('download failed for %s/%s', prefix, offset)
+            reportProgress('failed')
             controller.close()
-          } else {
-            controller.enqueue(new Uint8Array(await chunk.arrayBuffer()))
-            next(offset + 1)
           }
-        } catch (err) {
-          console.error('download failed for %s/%s', prefix, offset)
-          controller.close()
         }
+        next(0)
       }
-      next(0)
-    }
-  })
-  return new self.Response(stream, {
-    headers: [
-      ['Content-Length', totalSize],
-      ['Content-Type', mimeType],
-      [
-        'Content-Disposition',
-        `attachment; filename=${dateKey(prefix.slice(0, -1))}_${durationToMs(
-          duration
-        )}_${title.replace(/_/, '')}_${mimeType.replace('/', ' ')}.${fileType(
-          mimeType
-        )}`
+    })
+    return new self.Response(stream, {
+      headers: [
+        ['Content-Length', totalSize],
+        ['Content-Type', mimeType],
+        [
+          'Content-Disposition',
+          `attachment; filename=${dateKey(prefix.slice(0, -1))}_${durationToMs(
+            duration
+          )}_${title.replace(/_/, '')}_${mimeType.replace('/', ' ')}.${fileType(
+            mimeType
+          )}`
+        ]
       ]
-    ]
-  })
+    })
+  } catch (err) {
+    reportProgress('failed')
+    return new self.Response(err.toString(), { status: 500 })
+  }
 }
 
 async function stream (request) {
@@ -284,11 +318,13 @@ async function cacheResponse (request) {
 
 async function upload (request) {
   try {
+    reportProgress(0)
     const formData = await request.formData()
-    for (const file of formData.values()) {
+    const files = [...formData.values()]
+    for (const file of files) {
       const { name, size } = file
       if (/\.mwr/i.test(name)) {
-        await uploadFromDbFile(file)
+        await uploadFromDbFile(file, files.length)
         continue
       }
       const [prefix, ms, title = '', type = ''] = name
@@ -317,15 +353,21 @@ async function upload (request) {
         range++
       }
     }
+    reportProgress(100)
     return new self.Response()
   } catch (err) {
+    reportProgress('failed')
     return new self.Response(err.toString(), { status: 500 })
   }
 }
 
-async function uploadFromDbFile (file) {
+async function uploadFromDbFile (file, fileCount) {
   const headerSize = parseInt(await file.slice(0, 2).text(), 32)
   let offset = 2
+
+  let trackCount = 0
+  let tracksProcessed = 0
+  let lastKey
 
   while (true) {
     const headerData = file.slice(offset, offset + headerSize)
@@ -344,6 +386,49 @@ async function uploadFromDbFile (file) {
       dateKey(key),
       trackValue
     )
+    if (type === 'M') {
+      trackCount++
+    } else {
+      const processKey = dateKey(key)
+        .toString()
+        .replace(/^0+/, '')
+        .split('-')[0]
+      if (lastKey !== processKey) {
+        tracksProcessed++
+        reportProgress(((tracksProcessed / trackCount) * 100) / fileCount)
+      }
+      lastKey = processKey
+    }
+  }
+}
+
+function getProgress () {
+  if (progressController) {
+    progressController.close()
+  }
+  const stream = new self.ReadableStream({
+    start (controller) {
+      progressController = controller
+    }
+  })
+  return new self.Response(stream, {
+    headers: {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      Connection: 'Keep-Alive'
+    }
+  })
+}
+
+function reportProgress (message) {
+  if (progressController) {
+    progressController.enqueue(
+      new self.TextEncoder().encode(`data: ${message.toString()}\n\n`)
+    )
+    if (message === 100 || typeof message !== 'number') {
+      progressController.close()
+      progressController = null
+    }
   }
 }
 
