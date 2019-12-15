@@ -1,58 +1,14 @@
 /* eslint-env serviceworker */
 const { CACHE_KEY } = process.env
 
-let progressController
-
-const createStore = dbName => {
-  const storeName = 'keyval'
-  const openDB = new Promise((resolve, reject) => {
-    const openreq = indexedDB.open(dbName, 1)
-    openreq.onerror = () => reject(openreq.error)
-    openreq.onsuccess = () => resolve(openreq.result)
-    openreq.onupgradeneeded = () => {
-      openreq.result.createObjectStore(storeName)
-    }
-  })
-  return async (type, callback) => {
-    const db = await openDB
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction(storeName, type)
-      transaction.oncomplete = resolve
-      transaction.onabort = transaction.onerror = () =>
-        reject(transaction.error)
-      callback(transaction.objectStore(storeName))
-    })
-  }
-}
+import { store, get, set, cursor } from './db.js'
 
 const stores = {
-  blob: createStore('blob-db'),
-  meta: createStore('meta-db')
+  blob: store('blob-db'),
+  meta: store('meta-db')
 }
 
-async function get (store, key) {
-  try {
-    let req
-    await store('readonly', store => {
-      req = store.get(key)
-    })
-    return req.result
-  } catch (_) {
-    return null
-  }
-}
-
-async function set (store, key, value) {
-  await store('readwrite', store => store.put(value, key))
-}
-
-async function cursor (store, next) {
-  let cursor
-  await store('readonly', store => {
-    cursor = store.openCursor()
-    cursor.onsuccess = next
-  })
-}
+let progressController
 
 async function dump () {
   try {
@@ -71,8 +27,7 @@ async function dump () {
         )
         controller.enqueue(headerSize)
         let trackTotal = 0
-        await cursor(stores.meta, event => {
-          const cursor = event.target.result
+        await cursor(stores.meta, 'next', ({ target: { result: cursor } }) => {
           if (cursor) {
             const value = new self.TextEncoder().encode(
               JSON.stringify(cursor.value)

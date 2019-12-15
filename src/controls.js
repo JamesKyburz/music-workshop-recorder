@@ -1,4 +1,4 @@
-import { del, set, get, Store } from 'idb-keyval'
+import { del, set, get, store } from './db.js'
 import { audio, video } from './dom.js'
 
 export default input => {
@@ -11,8 +11,8 @@ export default input => {
   let uploadDownloadProgressTimeline
 
   const key = Date.now().toString(32)
-  const blobStore = new Store('blob-db')
-  const metaStore = new Store('meta-db')
+  const blobStore = store('blob-db')
+  const metaStore = store('meta-db')
   const fixedSize = 100000
   let recordingVideo
   const onStop = async e => {
@@ -165,7 +165,7 @@ export default input => {
                   if (frame.size === fixedSize || !recording) {
                     const key = prefix + part
                     part++
-                    set(key, frame, blobStore).catch(f => f)
+                    set(blobStore, key, frame).catch(f => f)
                     totalSize += frame.size
                   } else {
                     previousCapture = frame
@@ -175,17 +175,13 @@ export default input => {
               }
             }
             if (totalSize) {
-              set(
-                key,
-                {
-                  duration: msToTime(Date.now() - started),
-                  title: '',
-                  mimeType,
-                  totalSize,
-                  fixedSize
-                },
-                metaStore
-              ).catch(f => f)
+              set(metaStore, key, {
+                duration: msToTime(Date.now() - started),
+                title: '',
+                mimeType,
+                totalSize,
+                fixedSize
+              }).catch(f => f)
             }
           }
           capture.ondataavailable = save
@@ -244,17 +240,13 @@ export default input => {
             if (media) {
               if (duration === 0 && media.duration !== Infinity) {
                 duration = media.duration * 1000
-                get(key, metaStore)
+                get(metaStore, key)
                   .then(meta => {
                     if (meta) {
-                      return set(
-                        key,
-                        {
-                          ...meta,
-                          duration: msToTime(duration)
-                        },
-                        metaStore
-                      )
+                      return set(metaStore, key, {
+                        ...meta,
+                        duration: msToTime(duration)
+                      })
                     }
                   })
                   .catch(_ => null)
@@ -287,9 +279,9 @@ export default input => {
             inputTimer = null
           }
           inputTimer = setTimeout(() => {
-            get(key, metaStore).then(value => {
+            get(metaStore, key).then(value => {
               value.title = inputValue
-              set(key, value, metaStore).catch(f => f)
+              set(metaStore, key, value).catch(f => f)
               try {
                 window.document.body.querySelector(
                   `.track.key-${key} .title`
@@ -299,7 +291,7 @@ export default input => {
           }, 250)
         },
         onBack (e) {
-          window.document.querySelector('a.download').href = `/dump`
+          window.document.querySelector('a.download').href = '/dump'
           if (media) {
             media.pause()
             window.URL.revokeObjectURL(media.src)
@@ -330,13 +322,13 @@ export default input => {
         },
         async onDelete (e) {
           if (window.confirm(`Delete ${metadata.title || 'untitiled'}?`)) {
-            await del(key, metaStore)
+            await del(metaStore, key)
             if (metadata.totalSize) {
               const to = Math.floor(metadata.totalSize / metadata.fixedSize)
               let i = 0
-              while (i <= to) await del(`${key}-${i++}`, blobStore)
+              while (i <= to) await del(blobStore, `${key}-${i++}`)
             } else {
-              await del(key, blobStore)
+              await del(blobStore, key)
             }
             window.location.reload()
           }
