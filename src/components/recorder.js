@@ -16,6 +16,9 @@ export default opt =>
           className: 'controls'
         },
         [
+          div({ className: 'progress' }, [
+            div({ className: 'timeline' })
+          ]),
           img({
             className: 'upload',
             src: upload,
@@ -34,7 +37,8 @@ export default opt =>
           a(
             {
               className: 'download',
-              href: '/dump'
+              href: '/dump',
+              onclick: opt.onDownload()
             },
             [
               img({

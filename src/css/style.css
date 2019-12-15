@@ -76,10 +76,24 @@ video.recording {
   background-color: rgb(235, 0, 1);
   width: 0;
 }
+.recorder .controls .progress {
+  width: 100vw;
+  height: 10px;
+  position: fixed;
+  bottom: 140px;
+  background-color: #222;
+  position: fixed;
+  bottom: 0;
+  display: none;
+}
+.recorder .controls .progress .timeline {
+  height: 100%;
+  background-color: #2a3e29;
+  width: 100%;
+}
 .player .controls .progress .current-time {
   position: fixed;
   bottom: 112px;
-  cursor: pointer;
   color: white;
   font-weight: bold;
   text-align: right;
