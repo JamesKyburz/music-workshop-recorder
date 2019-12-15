@@ -1,7 +1,6 @@
 /* eslint-env serviceworker */
-const { CACHE_KEY } = process.env
-
 import { store, get, set, cursor } from './db.js'
+const { CACHE_KEY } = process.env
 
 const stores = {
   blob: store('blob-db'),
@@ -51,8 +50,7 @@ async function dump () {
         let more = true
         let lastKey
         let tracksProcessed = 0
-        cursor(stores.blob, event => {
-          const cursor = event.target.result
+        cursor(stores.blob, 'next', ({ target: { result: cursor } }) => {
           if (cursor) {
             const { key, value } = cursor
             const copy = value.slice ? value.slice() : new self.Blob(value.data)
