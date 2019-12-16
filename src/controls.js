@@ -44,15 +44,17 @@ export default input => {
   return {
     record: () => ({
       async onDownload () {
-        const progress = new window.EventSource('/progress')
-        progress.onmessage = ({ data }) => {
-          uploadDownloadDom()
-          const percent = +data
-          if (!isNaN(percent) && percent !== 100) {
-            uploadDownloadProgressTimeline.style.width = `${percent}%`
-            uploadDownloadProgress.style.display = 'block'
-          } else {
-            uploadDownloadProgress.style.display = 'none'
+        return () => {
+          const progress = new window.EventSource('/progress')
+          progress.onmessage = ({ data }) => {
+            uploadDownloadDom()
+            const percent = +data
+            if (!isNaN(percent) && percent !== 100) {
+              uploadDownloadProgressTimeline.style.width = `${percent}%`
+              uploadDownloadProgress.style.display = 'block'
+            } else {
+              uploadDownloadProgress.style.display = 'none'
+            }
           }
         }
       },
