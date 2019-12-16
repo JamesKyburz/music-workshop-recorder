@@ -107,21 +107,26 @@ async function dump () {
   }
 }
 
-self.addEventListener('install', event => {
-  event.waitUntil(install())
-  async function install () {
+self.addEventListener('install', async event => {
+  event.waitUntil(self.skipWaiting())
+  try {
     const keys = await self.caches.keys()
     for (const key of keys) {
       if (key !== CACHE_KEY) {
         await self.caches.delete(key)
       }
     }
-    await self.skipWaiting()
+  } catch (err) {
+    console.error('failed to delete old caches', err)
   }
 })
 
 self.addEventListener('activate', event =>
-  event.waitUntil(self.clients.claim())
+  event.waitUntil(
+    self.clients
+      .claim()
+      .catch(err => console.error('failed to claim clients', err))
+  )
 )
 
 const parseRange = value =>
@@ -246,9 +251,9 @@ async function cacheResponse (request) {
 
   return nohit(cache)
 
-  async function nohit (cache) {
+  function nohit (cache) {
     try {
-      await cacheAsset(cache)
+      return cacheAsset(cache)
     } catch (err) {
       console.warn(`error caching ${request.url}`, err)
       return self.fetch(request)
