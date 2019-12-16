@@ -379,9 +379,10 @@ function getProgress () {
 }
 
 function reportProgress (message) {
+  reportProgress.id = reportProgress.id || 0
   if (progressController) {
     progressController.enqueue(
-      new self.TextEncoder().encode(`data: ${message.toString()}\n\n`)
+      new self.TextEncoder().encode(`id: ${++reportProgress.id}\nretry: 60000\ndata: ${message.toString()}\n\n`)
     )
     if (message === 100 || typeof message !== 'number') {
       progressController.close()

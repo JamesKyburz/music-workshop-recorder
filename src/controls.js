@@ -7,8 +7,6 @@ export default input => {
   let started
   let recording
   let part
-  let uploadDownloadProgress
-  let uploadDownloadProgressTimeline
 
   const key = Date.now().toString(32)
   const blobStore = store('blob-db')
@@ -29,35 +27,52 @@ export default input => {
     setTimeout(() => window.location.reload(), 1000)
     capture = null
   }
-  const uploadDownloadDom = () => {
-    if (!uploadDownloadProgress) {
-      uploadDownloadProgress = window.document.querySelector(
-        '.recorder .progress'
-      )
-      if (uploadDownloadProgress) {
-        uploadDownloadProgressTimeline = uploadDownloadProgress.querySelector(
-          '.timeline'
+  const setupProgress = () => {
+    let uploadDownloadProgress
+    let uploadDownloadProgressTimeline
+    let progress
+    setup()
+    function setup () {
+      if (!uploadDownloadProgress) {
+        uploadDownloadProgress = window.document.querySelector(
+          '.recorder .progress'
         )
+        if (uploadDownloadProgress) {
+          uploadDownloadProgressTimeline = uploadDownloadProgress.querySelector(
+            '.timeline'
+          )
+        }
+      }
+
+      if (
+        !progress &&
+        uploadDownloadProgress &&
+        uploadDownloadProgressTimeline
+      ) {
+        progress = new window.EventSource('/progress')
+        progress.onmessage = ({ data }) => {
+          const percent = +data
+          if (!isNaN(percent) && percent !== 100) {
+            uploadDownloadProgressTimeline.style.width = `${percent}%`
+            uploadDownloadProgress.style.display = 'block'
+          } else {
+            progress.close()
+            uploadDownloadProgress.style.display = 'none'
+            progress = null
+            setTimeout(setup, 500)
+          }
+        }
+      } else {
+        setTimeout(setup, 500)
       }
     }
   }
+
+  setupProgress()
+
   return {
     record: () => ({
-      async onDownload () {
-        return () => {
-          const progress = new window.EventSource('/progress')
-          progress.onmessage = ({ data }) => {
-            uploadDownloadDom()
-            const percent = +data
-            if (!isNaN(percent) && percent !== 100) {
-              uploadDownloadProgressTimeline.style.width = `${percent}%`
-              uploadDownloadProgress.style.display = 'block'
-            } else {
-              uploadDownloadProgress.style.display = 'none'
-            }
-          }
-        }
-      },
+      async onDownload () {},
       onUpload () {
         return async () => {
           const input = window.document.body.appendChild(
@@ -86,18 +101,6 @@ export default input => {
               window.alert('sorry failed to upload')
             }
             input.parentNode.removeChild(input)
-          }
-          const progress = new window.EventSource('/progress')
-          progress.onmessage = ({ data }) => {
-            uploadDownloadDom()
-            const percent = +data
-            console.log('got upload progress', data)
-            if (!isNaN(percent) && percent !== 100) {
-              uploadDownloadProgressTimeline.style.width = `${percent}%`
-              uploadDownloadProgress.style.display = 'block'
-            } else {
-              uploadDownloadProgress.style.display = 'none'
-            }
           }
           input.click()
         }
