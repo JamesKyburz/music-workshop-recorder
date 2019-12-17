@@ -1,5 +1,7 @@
 import { del, set, get, store } from './db.js'
 import { audio, video } from './dom.js'
+import { msToTime, durationToMs } from './date.js'
+import setupProgress from './setup-progress.js'
 
 export default input => {
   let capture
@@ -26,46 +28,6 @@ export default input => {
     }
     setTimeout(() => window.location.reload(), 1000)
     capture = null
-  }
-  const setupProgress = () => {
-    let uploadDownloadProgress
-    let uploadDownloadProgressTimeline
-    let progress
-    setup()
-    function setup () {
-      if (!uploadDownloadProgress) {
-        uploadDownloadProgress = window.document.querySelector(
-          '.recorder .progress'
-        )
-        if (uploadDownloadProgress) {
-          uploadDownloadProgressTimeline = uploadDownloadProgress.querySelector(
-            '.timeline'
-          )
-        }
-      }
-
-      if (
-        !progress &&
-        uploadDownloadProgress &&
-        uploadDownloadProgressTimeline
-      ) {
-        progress = new window.EventSource('/progress')
-        progress.onmessage = ({ data }) => {
-          const percent = +data
-          if (!isNaN(percent) && percent !== 100) {
-            uploadDownloadProgressTimeline.style.width = `${percent}%`
-            uploadDownloadProgress.style.display = 'block'
-          } else {
-            progress.close()
-            uploadDownloadProgress.style.display = 'none'
-            progress = null
-            setTimeout(setup, 500)
-          }
-        }
-      } else {
-        setTimeout(setup, 500)
-      }
-    }
   }
 
   setupProgress()
@@ -346,24 +308,4 @@ export default input => {
   async function getMediaSource (key) {
     return `/stream/${key}-`
   }
-}
-
-function durationToMs (duration) {
-  const parts = duration.split(':')
-  return (
-    (parts.pop() || 0) * 1000 +
-    (parts.pop() || 0) * 60000 +
-    (parts.pop() || 0) * 3600000
-  )
-}
-
-function msToTime (ms) {
-  const twoDigits = s =>
-    Math.floor(s)
-      .toString()
-      .padStart(2, '0')
-  const seconds = twoDigits((ms / 1000) % 60)
-  const minutes = twoDigits((ms / 60000) % 60)
-  const hours = twoDigits((ms / 3600000) % 24)
-  return `${hours}:${minutes}:${seconds}`.replace(/^00:/, '')
 }

@@ -1,5 +1,7 @@
 /* eslint-env serviceworker */
 import { store, get, set, cursor } from './db.js'
+import { msToTime, durationToMs } from './date.js'
+
 const { CACHE_KEY } = process.env
 
 const stores = {
@@ -382,7 +384,9 @@ function reportProgress (message) {
   reportProgress.id = reportProgress.id || 0
   if (progressController) {
     progressController.enqueue(
-      new self.TextEncoder().encode(`id: ${++reportProgress.id}\nretry: 60000\ndata: ${message.toString()}\n\n`)
+      new self.TextEncoder().encode(
+        `id: ${++reportProgress.id}\nretry: 60000\ndata: ${message.toString()}\n\n`
+      )
     )
     if (message === 100 || typeof message !== 'number') {
       progressController.close()
@@ -403,26 +407,6 @@ function dateKey (key) {
 
 function requestPrefix (request) {
   return decodeURIComponent(request.url.split('/').slice(-1)[0])
-}
-
-function durationToMs (duration) {
-  const parts = duration.split(':')
-  return (
-    (parts.pop() || 0) * 1000 +
-    (parts.pop() || 0) * 60000 +
-    (parts.pop() || 0) * 3600000
-  )
-}
-
-function msToTime (ms) {
-  const twoDigits = s =>
-    Math.floor(s)
-      .toString()
-      .padStart(2, '0')
-  const seconds = twoDigits((ms / 1000) % 60)
-  const minutes = twoDigits((ms / 60000) % 60)
-  const hours = twoDigits((ms / 3600000) % 24)
-  return `${hours}:${minutes}:${seconds}`.replace(/^00:/, '')
 }
 
 function fileType (mimeType) {
