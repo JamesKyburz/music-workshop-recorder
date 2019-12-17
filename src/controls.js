@@ -72,7 +72,9 @@ export default input => {
 
   return {
     record: () => ({
-      async onDownload () {},
+      canRecord (type) {
+        return !!input[type]
+      },
       onUpload () {
         return async () => {
           const input = window.document.body.appendChild(
@@ -125,7 +127,7 @@ export default input => {
           }
           e.target.parentNode.parentNode.classList.add('recording')
           started = Date.now()
-          capture = new window.MediaRecorder(input, {
+          capture = new window.MediaRecorder(input[type], {
             mimeType: `${type}/webm`
           })
           if (type === 'video') {
@@ -133,7 +135,7 @@ export default input => {
               className: 'recording',
               style: 'position: fixed; top: 0; left: 0',
               muted: true,
-              srcObject: input
+              srcObject: input[type]
             })
             recordingVideo.play().catch(f => f)
             window.document.body.appendChild(recordingVideo)

@@ -231,3 +231,6 @@ html, body {
 .tracks .title {
   overflow: hidden;
 }
+h1 {
+  color: white;
+}

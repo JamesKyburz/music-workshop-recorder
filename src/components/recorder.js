@@ -16,9 +16,7 @@ export default opt =>
           className: 'controls'
         },
         [
-          div({ className: 'progress' }, [
-            div({ className: 'timeline' })
-          ]),
+          div({ className: 'progress' }, [div({ className: 'timeline' })]),
           img({
             className: 'upload',
             src: upload,
@@ -26,19 +24,20 @@ export default opt =>
           }),
           img({
             className: 'audio',
+            ...(!opt.canRecord('audio') && { style: 'display: none;' }),
             src: recordAudio,
             onclick: opt.onRecord('audio')
           }),
           img({
             className: 'video',
+            ...(!opt.canRecord('video') && { style: 'display: none;' }),
             src: recordVideo,
             onclick: opt.onRecord('video')
           }),
           a(
             {
               className: 'download',
-              href: '/dump',
-              onclick: opt.onDownload()
+              href: '/dump'
             },
             [
               img({

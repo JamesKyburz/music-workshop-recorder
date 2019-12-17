@@ -1,6 +1,6 @@
 import app from './components/app.js'
 import './register-sw.js'
-import getInput from './get-input.js'
+import getInputs from './get-inputs.js'
 
 if (
   window.location.hostname !== 'localhost' &&
@@ -12,8 +12,19 @@ if (
 if (!window.MediaRecorder || !window.navigator.mediaDevices) {
   window.document.body.innerHTML = "<h1>Sorry your browser isn't supported</h1>"
 } else {
-  getInput()
-    .then(app)
-    .then(el => el && window.document.body.appendChild(el))
-    .catch(err => console.error(err))
+  createApp()
+}
+
+async function createApp () {
+  try {
+    const { getAudio, getVideo } = getInputs()
+    const audio = await getAudio.catch(_ => null)
+    const video = await getVideo.catch(_ => null)
+    const el = await app({ audio, video })
+    window.document.body.appendChild(el)
+  } catch (err) {
+    window.document.body.innerHTML = `<h1>Sorry failed to load ${
+      err.message
+    }</h1>`
+  }
 }
