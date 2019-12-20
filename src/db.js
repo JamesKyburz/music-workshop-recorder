@@ -43,10 +43,13 @@ export async function del (store, key) {
   })
 }
 
-export async function cursor (store, direction, next) {
+export async function cursor (
+  store,
+  { direction = 'next', next, query = null, type = 'readonly' }
+) {
   let cursor
-  await store('readonly', (store, reject) => {
-    cursor = store.openCursor(null, direction)
+  await store(type, (store, reject) => {
+    cursor = store.openCursor(query, direction)
     cursor.onsuccess = next
     cursor.onerror = reject
   })

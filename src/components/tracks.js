@@ -14,28 +14,31 @@ export default async () => {
     if (!+date) date = new Date(key)
     return date.toDateString()
   }
-  await cursor(metaStore, 'prev', ({ target: { result: cursor } }) => {
-    if (cursor) {
-      const key = cursor.key
-      const date = keyToDateString(key)
-      if (!slider || previousDate !== date) {
-        tracks.push(h4({ className: 'day', textContent: date }))
-        slider = div({ className: 'slider' })
-        tracks.push(slider)
+  await cursor(metaStore, {
+    direction: 'prev',
+    next: ({ target: { result: cursor } }) => {
+      if (cursor) {
+        const key = cursor.key
+        const date = keyToDateString(key)
+        if (!slider || previousDate !== date) {
+          tracks.push(h4({ className: 'day', textContent: date }))
+          slider = div({ className: 'slider' })
+          tracks.push(slider)
+        }
+        const metadata = cursor.value
+        const { title, duration, mimeType } = metadata
+        slider.push(
+          track({
+            title,
+            duration,
+            key,
+            type: (mimeType || '').split('/')[0],
+            ...controls.track({ key, metadata })
+          })
+        )
+        previousDate = date
+        cursor.continue()
       }
-      const metadata = cursor.value
-      const { title, duration, mimeType } = metadata
-      slider.push(
-        track({
-          title,
-          duration,
-          key,
-          type: (mimeType || '').split('/')[0],
-          ...controls.track({ key, metadata })
-        })
-      )
-      previousDate = date
-      cursor.continue()
     }
   })
   return tracks

@@ -29,38 +29,44 @@ async function dump () {
         )
         controller.enqueue(headerSize)
         let trackTotal = 0
-        await cursor(stores.meta, 'next', ({ target: { result: cursor } }) => {
-          if (cursor) {
-            const value = new self.TextEncoder().encode(
-              JSON.stringify(cursor.value)
-            )
-            const header = new self.TextEncoder().encode(
-              JSON.stringify({
-                next: {
-                  size: value.byteLength.toString(32).padStart(5, '0'),
-                  key: cursor.key.toString().padStart(15, '0'),
-                  type: 'M'
-                }
-              })
-            )
-            controller.enqueue(header)
-            controller.enqueue(value)
-            trackTotal++
-            cursor.continue()
+        await cursor(stores.meta, {
+          next: ({ target: { result: cursor } }) => {
+            if (cursor) {
+              const value = new self.TextEncoder().encode(
+                JSON.stringify(cursor.value)
+              )
+              const header = new self.TextEncoder().encode(
+                JSON.stringify({
+                  next: {
+                    size: value.byteLength.toString(32).padStart(5, '0'),
+                    key: cursor.key.toString().padStart(15, '0'),
+                    type: 'M'
+                  }
+                })
+              )
+              controller.enqueue(header)
+              controller.enqueue(value)
+              trackTotal++
+              cursor.continue()
+            }
           }
         })
         const pending = []
         let more = true
         let lastKey
         let tracksProcessed = 0
-        cursor(stores.blob, 'next', ({ target: { result: cursor } }) => {
-          if (cursor) {
-            const { key, value } = cursor
-            const copy = value.slice ? value.slice() : new self.Blob(value.data)
-            pending.push({ key, value: copy })
-            cursor.continue()
-          } else {
-            more = false
+        cursor(stores.blob, {
+          next: ({ target: { result: cursor } }) => {
+            if (cursor) {
+              const { key, value } = cursor
+              const copy = value.slice
+                ? value.slice()
+                : new self.Blob(value.data)
+              pending.push({ key, value: copy })
+              cursor.continue()
+            } else {
+              more = false
+            }
           }
         }).catch(console.error)
         // eslint-disable-next-line
@@ -392,17 +398,25 @@ async function deleteTrack (request) {
     const prefix = requestPrefix(request)
     const meta = await get(stores.meta, prefix.slice(0, -1))
     if (!meta) return new self.Response(null, { status: 404 })
-    await del(stores.meta, prefix.slice(0, -1))
     if (meta.totalSize) {
-      const to = Math.floor(meta.totalSize / meta.fixedSize)
-      let i = 0
-      while (i <= to) {
-        await del(stores.blob, `${prefix}${i++}`)
-        reportProgress((i / to) * 100)
-      }
+      const chunks = meta.totalSize / meta.fixedSize
+      await cursor(stores.blob, {
+        query: self.IDBKeyRange.bound(`${prefix}\x00`, `${prefix}\xff`, false, false),
+        type: 'readwrite',
+        next: ({ target: { result: cursor } }) => {
+          if (cursor) {
+            const i = Number(cursor.key.split('-').slice(-1)[0])
+            if (i === 0) console.log(cursor.key)
+            cursor.delete()
+            reportProgress((i / chunks) * 100)
+            cursor.continue()
+          }
+        }
+      })
     } else {
       await del(stores.blob, prefix.slice(0, -1))
     }
+    await del(stores.meta, prefix.slice(0, -1))
     reportProgress(100)
     return new self.Response()
   } catch (error) {
