@@ -17,10 +17,7 @@ if (!window.MediaRecorder || !window.navigator.mediaDevices) {
 
 async function createApp () {
   try {
-    const { getAudio, getVideo } = getInputs()
-    const audio = await getAudio.catch(_ => null)
-    const video = await getVideo.catch(_ => null)
-    const el = await app({ audio, video })
+    const el = await app(await getInputs())
     window.document.body.appendChild(el)
   } catch (err) {
     window.document.body.innerHTML = `<h1>Sorry failed to load ${
