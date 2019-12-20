@@ -188,18 +188,16 @@ async function download (request) {
         next(0)
       }
     })
+    const filename = `${dateKey(prefix.slice(0, -1))}_${
+      duration ? durationToMs(duration) : ''
+    }_${title.replace(/_/g, '')}_${mimeType.replace(/\//g, ' ')}.${getFileType(
+      mimeType
+    )}`
     return new self.Response(stream, {
       headers: [
         ['Content-Length', totalSize],
         ['Content-Type', mimeType],
-        [
-          'Content-Disposition',
-          `attachment; filename=${dateKey(prefix.slice(0, -1))}_${durationToMs(
-            duration
-          )}_${title.replace(/_/, '')}_${mimeType.replace('/', ' ')}.${fileType(
-            mimeType
-          )}`
-        ]
+        ['Content-Disposition', `attachment; filename=${filename}`]
       ]
     })
   } catch (err) {
@@ -290,7 +288,7 @@ async function upload (request) {
       const [prefix, ms, title = '', type = ''] = name
         .replace(/\..*$/, '')
         .split('_')
-      const mimeType = type.replace(/ /, '/') || file.type
+      const mimeType = type ? type.replace(/ /, '/') : getMimeType(name)
       const duration = ms ? msToTime(ms) : '\xa0'
       const fixedSize = 100000
       const key = name.includes('_') ? dateKey(prefix) : Date.now().toString(32)
@@ -409,6 +407,12 @@ function requestPrefix (request) {
   return decodeURIComponent(request.url.split('/').slice(-1)[0])
 }
 
-function fileType (mimeType) {
-  return mimeType.split('/').slice(-1)[0]
+function getFileType (mimeType) {
+  return mimeType.split('/')[1]
+}
+
+function getMimeType (filename) {
+  if (/.mp4/i.test(filename)) return 'video/mp4'
+  if (/.mp3/i.test(filename)) return 'audio/mp3'
+  if (/.webm/i.test(filename)) return 'video/webm'
 }
