@@ -52,7 +52,7 @@ export default input => {
               formData.append(
                 'file',
                 file.slice(),
-                file.name.replace(/[^\w_ .]/g, '')
+                file.name.replace(/[^\w-_; .]/g, '')
               )
             }
             const res = await window.fetch('/upload', {
@@ -290,16 +290,14 @@ export default input => {
           }
         },
         async onDelete (e) {
-          if (window.confirm(`Delete ${metadata.title || 'untitiled'}?`)) {
-            await del(metaStore, key)
-            if (metadata.totalSize) {
-              const to = Math.floor(metadata.totalSize / metadata.fixedSize)
-              let i = 0
-              while (i <= to) await del(blobStore, `${key}-${i++}`)
+          const trackTitle = `${metadata.title || 'untitiled'}?`
+          if (window.confirm(`Delete ${trackTitle}?`)) {
+            const res = await fetch(`/delete/${key}-`, { method: 'DELETE' })
+            if (res.status === 200) {
+              window.location.reload()
             } else {
-              await del(blobStore, key)
+              alert(`Failed to delete ${trackTitle}`)
             }
-            window.location.reload()
           }
         }
       }

@@ -1,8 +1,9 @@
 /* eslint-env serviceworker */
-import { store, get, set, cursor } from './db.js'
+import { store, get, set, del, cursor } from './db.js'
 import { msToTime, durationToMs } from './date.js'
 
 const { CACHE_KEY } = process.env
+const FILE_DELIMITER = ';'
 
 const stores = {
   blob: store('blob-db'),
@@ -142,6 +143,9 @@ self.addEventListener('fetch', event => {
   if (event.request.method === 'GET' && pathname.startsWith('/stream/')) {
     return event.respondWith(stream(event.request))
   }
+  if (event.request.method === 'DELETE' && pathname.startsWith('/delete/')) {
+    return event.respondWith(deleteTrack(event.request))
+  }
   if (event.request.method === 'PUT' && pathname === '/upload') {
     return event.respondWith(upload(event.request))
   }
@@ -188,11 +192,12 @@ async function download (request) {
         next(0)
       }
     })
-    const filename = `${dateKey(prefix.slice(0, -1))}_${
-      duration ? durationToMs(duration) : ''
-    }_${title.replace(/_/g, '')}_${mimeType.replace(/\//g, ' ')}.${getFileType(
-      mimeType
-    )}`
+    const filename = [
+      dateKey(prefix.slice(0, -1)),
+      duration ? durationToMs(duration) : '',
+      title,
+      `${mimeType.replace(/\//g, ' ')}.${getFileType(mimeType)}`
+    ].join(encodeURIComponent(FILE_DELIMITER))
     return new self.Response(stream, {
       headers: [
         ['Content-Length', totalSize],
@@ -285,23 +290,26 @@ async function upload (request) {
         await uploadFromDbFile(file, files.length)
         continue
       }
-      const [prefix, ms, title = '', type = ''] = name
+      const [prefix, ms, title = '', type = ''] = decodeURIComponent(name)
         .replace(/\..*$/, '')
-        .split('_')
+        .split(FILE_DELIMITER)
       const mimeType = type ? type.replace(/ /, '/') : getMimeType(name)
       const duration = ms ? msToTime(ms) : '\xa0'
       const fixedSize = 100000
-      const key = name.includes('_') ? dateKey(prefix) : Date.now().toString(32)
+      const key = name.includes(FILE_DELIMITER)
+        ? dateKey(prefix)
+        : Date.now().toString(32)
       await set(stores.meta, key, {
         duration,
         fixedSize,
         mimeType,
         totalSize: size,
-        title: name.includes('_') ? title : prefix
+        title: name.includes(FILE_DELIMITER) ? title : prefix
       })
       let range = 0
       let offset = 0
       while (offset < size) {
+        reportProgress(((offset / size) * 100) / files.length)
         await set(
           stores.blob,
           `${key}-${range}`,
@@ -376,6 +384,30 @@ function getProgress () {
       Connection: 'Keep-Alive'
     }
   })
+}
+
+async function deleteTrack (request) {
+  try {
+    reportProgress(0)
+    const prefix = requestPrefix(request)
+    const meta = await get(stores.meta, prefix.slice(0, -1))
+    if (!meta) return new self.Response(null, { status: 404 })
+    await del(stores.meta, prefix.slice(0, -1))
+    if (meta.totalSize) {
+      const to = Math.floor(meta.totalSize / meta.fixedSize)
+      let i = 0
+      while (i <= to) {
+        await del(stores.blob, `${prefix}${i++}`)
+        reportProgress((i / to) * 100)
+      }
+    } else {
+      await del(stores.blob, prefix.slice(0, -1))
+    }
+    reportProgress(100)
+    return new self.Response()
+  } catch (error) {
+    return new self.Response(error.toString(), { status: 500 })
+  }
 }
 
 function reportProgress (message) {
