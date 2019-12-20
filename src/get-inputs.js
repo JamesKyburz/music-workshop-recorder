@@ -1,63 +1,39 @@
-import { input, datalist, option } from './dom.js'
+import selectAudioInput from './select-audio-input.js'
 
 export default async () => {
   const audioDeviceId = window.sessionStorage.getItem('audio-deviceid')
-  if (audioDeviceId) audio.deviceId = { exact: audioDeviceId }
-  const getAudio = await window.navigator.mediaDevices
-    .getUserMedia({ audio })
-    .catch(_ => null)
-  const getVideo = await window.navigator.mediaDevices
-    .getUserMedia({ video, audio })
-    .catch(_ => null)
 
-  if (!audioDeviceId) {
-    const devices = await navigator.mediaDevices.enumerateDevices()
-    const audioInputs = devices.filter(x => x.kind === 'audioinput')
+  const audioSettings = {
+    sampleRate: 48000,
+    channelCount: 2,
+    volume: 1.0,
+    echoCancellation: false,
+    noiseSuppression: false,
+    audioGainControl: false,
+    ...(audioDeviceId && { deviceId: { exact: audioDeviceId } })
+  }
 
-    if (!audioDeviceId) {
-      const select = window.document.body.appendChild(
-        input({
-          className: 'select-audio',
-          placeholder: 'Select audio device'
-        })
-      )
-      window.document.body.appendChild(
-        datalist(
-          {
-            id: 'devices'
-          },
-          audioInputs.map(x => option({ value: x.label }))
-        )
-      )
-      select.setAttribute('list', 'devices')
-      const label = await new Promise((resolve, reject) => {
-        select.onchange = () => resolve(select.value)
-      })
-      window.sessionStorage.setItem(
-        'audio-deviceid',
-        audioInputs.find(x => x.label === label).deviceId
-      )
-      window.location.reload()
+  const mediaSettings = {
+    audio: {
+      audio: audioSettings
+    },
+    video: {
+      video: {
+        facingMode: 'environment'
+      },
+      audio: audioSettings
     }
   }
 
-  if (!getAudio) window.sessionStorage.removeItem('audio-deviceid')
+  const getInput = type =>
+    window.navigator.mediaDevices
+      .getUserMedia(mediaSettings[type])
+      .catch(_ => null)
 
-  return {
-    audio: getAudio,
-    video: getVideo
-  }
-}
+  const audio = await getInput('audio')
+  const video = await getInput('video')
 
-const audio = {
-  sampleRate: 48000,
-  channelCount: 2,
-  volume: 1.0,
-  echoCancellation: false,
-  noiseSuppression: false,
-  audioGainControl: false
-}
+  if (!audio || !audioDeviceId) await selectAudioInput()
 
-const video = {
-  facingMode: 'environment'
+  return { audio, video }
 }
