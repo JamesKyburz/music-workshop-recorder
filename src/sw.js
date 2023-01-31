@@ -376,7 +376,11 @@ async function uploadFromDbFile (file, fileCount) {
 
 function getProgress () {
   if (progressController) {
-    progressController.close()
+    try {
+      progressController.close()
+      progressController = null
+    } catch {
+    }
   }
   const stream = new self.ReadableStream({
     start (controller) {
