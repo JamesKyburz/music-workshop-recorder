@@ -1,13 +1,4 @@
 import { img, div, input } from '../dom.js'
-import back from '../img/back.svg'
-import play from '../img/play.svg'
-import pause from '../img/pause-playing.svg'
-import stop from '../img/stop-playing.svg'
-import audio from '../img/audio.svg'
-import video from '../img/video.svg'
-import deleteTrack from '../img/delete.svg'
-import increase from '../img/increase.svg'
-import decrease from '../img/decrease.svg'
 
 export default opt => {
   opt.onShow()
@@ -26,7 +17,16 @@ export default opt => {
           },
           value: opt.title || ''
         }),
-        img({ className: 'type', src: opt.type === 'audio' ? audio : video })
+        img({
+          ...(opt.type !== 'audio' && { style: 'display: none;' }),
+          className: 'type',
+          src: new URL('../img/audio.svg', import.meta.url).href,
+        }),
+        img({
+          ...(opt.type !== 'video' && { style: 'display: none;' }),
+          className: 'type',
+          src: new URL('../img/video.svg', import.meta.url).href,
+        }),
       ]),
       div(
         {
@@ -35,37 +35,37 @@ export default opt => {
         [
           img({
             className: 'back',
-            src: back,
+            src: new URL('../img/back.svg', import.meta.url).href,
             onclick: opt.onBack
           }),
           img({
             className: 'play',
-            src: play,
+            src: new URL('../img/play.svg', import.meta.url).href,
             onclick: opt.onPlay
           }),
           img({
             className: 'decrease',
-            src: decrease,
+            src: new URL('../img/decrease.svg', import.meta.url).href,
             onclick: opt.onDecrease
           }),
           img({
             className: 'pause',
-            src: pause,
+            src: new URL('../img/pause-playing.svg', import.meta.url).href,
             onclick: opt.onPause
           }),
           img({
             className: 'stop',
-            src: stop,
+            src: new URL('../img/stop-playing.svg', import.meta.url).href,
             onclick: opt.onStop
           }),
           img({
             className: 'increase',
-            src: increase,
+            src: new URL('../img/increase.svg', import.meta.url).href,
             onclick: opt.onIncrease
           }),
           img({
             className: 'delete',
-            src: deleteTrack,
+            src: new URL('../img/delete.svg', import.meta.url).href,
             onclick: opt.onDelete
           }),
           div({ className: 'progress' }, [

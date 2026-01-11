@@ -1,6 +1,9 @@
 if (navigator.serviceWorker) {
   navigator.serviceWorker
-    .register('/sw.js')
+    .register(
+      new URL('./sw.js', import.meta.url),
+      { type: 'module' }
+    )
     .then(registration => {
       if (window.navigator.serviceWorker.controller) {
         if (registration.update) registration.update()

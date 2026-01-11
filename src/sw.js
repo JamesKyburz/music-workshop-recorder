@@ -2,7 +2,7 @@
 import { store, get, set, del, cursor } from './db.js'
 import { msToTime, durationToMs } from './date.js'
 
-const { CACHE_KEY } = process.env
+const CACHE_KEY = process.env.CACHE_KEY || 'v1'
 const FILE_DELIMITER = ';'
 
 const stores = {
