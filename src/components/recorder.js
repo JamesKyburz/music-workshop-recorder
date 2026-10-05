@@ -1,9 +1,4 @@
 import { img, div, a } from '../dom.js'
-import recordAudio from '../img/record-audio.svg'
-import recordVideo from '../img/record-video.svg'
-import stopRecording from '../img/stop-recording.svg'
-import upload from '../img/upload.svg'
-import download from '../img/download.svg'
 
 export default opt =>
   div(
@@ -19,19 +14,19 @@ export default opt =>
           div({ className: 'progress' }, [div({ className: 'timeline' })]),
           img({
             className: 'upload',
-            src: upload,
+            src: new URL('../img/upload.svg', import.meta.url).href,
             onclick: opt.onUpload()
           }),
           img({
             className: 'audio',
             ...(!opt.canRecord('audio') && { style: 'display: none;' }),
-            src: recordAudio,
+            src: new URL('../img/record-audio.svg', import.meta.url).href,
             onclick: opt.onRecord('audio')
           }),
           img({
             className: 'video',
             ...(!opt.canRecord('video') && { style: 'display: none;' }),
-            src: recordVideo,
+            src: new URL('../img/record-video.svg', import.meta.url).href,
             onclick: opt.onRecord('video')
           }),
           a(
@@ -42,11 +37,11 @@ export default opt =>
             [
               img({
                 className: 'download',
-                src: download
+                src: new URL('../img/download.svg', import.meta.url).href,
               })
             ]
           ),
-          img({ className: 'stop', src: stopRecording, onclick: opt.onStop })
+          img({ className: 'stop', src: new URL('../img/stop-recording.svg', import.meta.url).href, onclick: opt.onStop })
         ]
       )
     ]

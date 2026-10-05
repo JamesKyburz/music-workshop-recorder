@@ -1,6 +1,4 @@
 import { div, img, span } from '../dom.js'
-import audio from '../img/audio.svg'
-import video from '../img/video.svg'
 import player from './player'
 
 export default opt =>
@@ -15,8 +13,14 @@ export default opt =>
         textContent: opt.title || 'untitled'
       }),
       img({
+        ...(opt.type !== 'audio' && { style: 'display: none;' }),
         className: 'type',
-        src: opt.type === 'audio' ? audio : video
+        src: new URL('../img/audio.svg', import.meta.url).href,
+      }),
+      img({
+        ...(opt.type !== 'video' && { style: 'display: none;' }),
+        className: 'type',
+        src: new URL('../img/video.svg', import.meta.url).href,
       }),
       span({
         className: 'duration',
